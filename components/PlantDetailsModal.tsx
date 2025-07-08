@@ -35,7 +35,7 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
   onBook,
 }) => {
   const [quantity, setQuantity] = useState(1);
-  const { addToCart, language } = useApp();
+  const { addToCart, language, t } = useApp();
   const translateY = useRef(new Animated.Value(MODAL_HEIGHT)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
@@ -79,7 +79,7 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
       }
     },
     onPanResponderRelease: (_, gestureState) => {
-      if (gestureState.dy > 100 || gestureState.vy > 0.5) {
+      if (gestureState.dy > 60 || gestureState.vy > 0.3) {
         onClose();
       } else {
         Animated.spring(translateY, {
@@ -114,15 +114,12 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
   };
 
   const getDifficultyText = (difficulty: string) => {
-    if (language === 'gujarati') {
-      switch (difficulty) {
-        case 'Easy': return 'સરળ';
-        case 'Medium': return 'મધ્યમ';
-        case 'Hard': return 'મુશ્કેલ';
-        default: return difficulty;
-      }
+    switch (difficulty) {
+      case 'Easy': return t('easy');
+      case 'Medium': return t('medium');
+      case 'Hard': return t('hard');
+      default: return difficulty;
     }
-    return difficulty;
   };
 
   return (
@@ -146,18 +143,25 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
             styles.modalContainer,
             { transform: [{ translateY }] }
           ]}
-          {...panResponder.panHandlers}
         >
           {/* Drag Handle */}
-          <View style={styles.dragHandle} />
+          <View 
+            style={styles.dragHandle} 
+            {...panResponder.panHandlers}
+            accessible
+            accessibilityLabel="Drag Handle"
+            testID="modal-drag-handle"
+          >
+            <View style={styles.dragBar} />
+          </View>
           
           {/* Header */}
-          <View style={styles.header}>
+          <View style={styles.header} accessible accessibilityLabel="Modal Header" testID="modal-header">
             <View style={styles.headerContent}>
-              <Text style={styles.headerTitle}>
-                {language === 'gujarati' ? 'છોડની વિગતો' : 'Plant Details'}
+              <Text style={styles.headerTitle} accessibilityLabel="Modal Title">
+                {t('plant_details')}
               </Text>
-              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose} activeOpacity={0.7} accessible accessibilityLabel="Close Modal Button" testID="modal-close-button">
                 <X size={24} color={Colors.textGrey} />
               </TouchableOpacity>
             </View>
@@ -168,12 +172,20 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
             style={styles.content} 
             showsVerticalScrollIndicator={false}
             bounces={false}
+            contentContainerStyle={{ paddingBottom: 32 }}
+            accessible
+            accessibilityLabel="Modal Content"
+            testID="modal-content"
           >
-            {/* Plant Image */}
+            {/* Plant Images Gallery */}
             <View style={styles.imageContainer}>
-              <Image source={{ uri: plant.image }} style={styles.image} />
+              <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
+                {(plant.images && plant.images.length > 0 ? plant.images : [plant.image]).map((img: string, idx: number) => (
+                  <Image key={idx} source={{ uri: img }} style={styles.image} />
+                ))}
+              </ScrollView>
               <View style={styles.imageOverlay}>
-                <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(plant.difficulty) }]}>
+                <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(plant.difficulty) }]}> 
                   <Text style={styles.difficultyText}>
                     {getDifficultyText(plant.difficulty)}
                   </Text>
@@ -184,7 +196,7 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
             {/* Plant Info */}
             <View style={styles.plantInfo}>
               <Text style={styles.plantName}>
-                {language === 'gujarati' ? plant.nameGujarati : plant.name}
+                {t('plant_name', { name: language === 'gujarati' ? plant.nameGujarati : plant.name })}
               </Text>
               
               <View style={styles.tagContainer}>
@@ -196,60 +208,54 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
               <View style={styles.freeBadge}>
                 <Heart size={20} color={Colors.error} fill={Colors.error} />
                 <Text style={styles.freeText}>
-                  {language === 'gujarati' ? 'AMC તરફથી મફત' : 'FREE from AMC'}
+                  {t('free_from_amc')}
                 </Text>
               </View>
 
               {/* Description */}
               <View style={styles.descriptionContainer}>
                 <Text style={styles.descriptionTitle}>
-                  {language === 'gujarati' ? 'વર્ણન:' : 'Description:'}
+                  {t('description')}
                 </Text>
                 <Text style={styles.description}>
-                  {language === 'gujarati' ? plant.descriptionGujarati : plant.description}
+                  {t('plant_description', { description: language === 'gujarati' ? plant.descriptionGujarati : plant.description })}
                 </Text>
               </View>
 
               {/* Benefits */}
               <View style={styles.benefitsContainer}>
                 <Text style={styles.benefitsTitle}>
-                  {language === 'gujarati' ? 'ફાયદાઓ:' : 'Benefits:'}
+                  {t('benefits')}
                 </Text>
                 <View style={styles.benefitsList}>
                   {(language === 'gujarati' ? plant.benefitsGujarati : plant.benefits).map((benefit, index) => (
                     <View key={index} style={styles.benefitItem}>
                       <View style={styles.bulletPoint} />
-                      <Text style={styles.benefitText}>{benefit}</Text>
+                      <Text style={styles.benefitText}>{t('plant_benefit', { benefit })}</Text>
                     </View>
                   ))}
                 </View>
               </View>
 
-              {/* Pickup Location */}
-              <View style={styles.pickupContainer}>
-                <MapPin size={18} color={Colors.amcBlue} />
-                <Text style={styles.pickupText}>
-                  {language === 'gujarati' 
-                    ? 'AMC નર્સરી, નવરંગપુરા થી લો' 
-                    : 'Pickup from AMC Nursery, Navrangpura'}
-                </Text>
-              </View>
-
               {/* Quantity Selector */}
               <View style={styles.quantitySection}>
                 <Text style={styles.quantityLabel}>
-                  {language === 'gujarati' ? 'સંખ્યા પસંદ કરો:' : 'Select Quantity:'}
+                  {t('select_quantity')}
                 </Text>
                 <View style={styles.quantityContainer}>
                   <TouchableOpacity
                     style={[styles.quantityButton, quantity === 1 && styles.quantityButtonDisabled]}
                     onPress={() => setQuantity(Math.max(1, quantity - 1))}
                     disabled={quantity === 1}
+                    activeOpacity={0.7}
+                    accessible
+                    accessibilityLabel="Decrease Quantity"
+                    testID="decrease-quantity"
                   >
                     <Minus size={20} color={quantity === 1 ? Colors.textGrey : Colors.primary} />
                   </TouchableOpacity>
                   
-                  <View style={styles.quantityDisplay}>
+                  <View style={styles.quantityDisplay} accessible accessibilityLabel="Quantity Display" testID="quantity-display">
                     <Text style={styles.quantityText}>{quantity}</Text>
                   </View>
                   
@@ -257,6 +263,10 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
                     style={[styles.quantityButton, quantity === 10 && styles.quantityButtonDisabled]}
                     onPress={() => setQuantity(Math.min(10, quantity + 1))}
                     disabled={quantity === 10}
+                    activeOpacity={0.7}
+                    accessible
+                    accessibilityLabel="Increase Quantity"
+                    testID="increase-quantity"
                   >
                     <Plus size={20} color={quantity === 10 ? Colors.textGrey : Colors.primary} />
                   </TouchableOpacity>
@@ -264,7 +274,7 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
                 
                 {quantity === 10 && (
                   <Text style={styles.maxQuantityText}>
-                    {language === 'gujarati' ? 'મહત્તમ 10 છોડ' : 'Maximum 10 plants'}
+                    {t('max_10_plants')}
                   </Text>
                 )}
               </View>
@@ -273,16 +283,16 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
 
           {/* Action Buttons */}
           <View style={styles.actionContainer}>
-            <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart}>
+            <TouchableOpacity style={styles.addToCartButton} onPress={handleAddToCart} activeOpacity={0.7} accessible accessibilityLabel="Add to Cart Button" testID="add-to-cart-modal">
               <ShoppingCart size={20} color={Colors.white} />
-              <Text style={styles.addToCartText}>
-                {language === 'gujarati' ? 'કાર્ટમાં ઉમેરો' : 'Add to Cart'}
+              <Text style={styles.addToCartText} accessibilityLabel="Add to Cart Text">
+                {t('add_to_cart')}
               </Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.bookButton} onPress={handleBookNow}>
-              <Text style={styles.bookButtonText}>
-                {language === 'gujarati' ? 'હવે બુક કરો' : 'Book Now'}
+            <TouchableOpacity style={styles.bookButton} onPress={handleBookNow} activeOpacity={0.7} accessible accessibilityLabel="Book Now Button" testID="book-now-modal">
+              <Text style={styles.bookButtonText} accessibilityLabel="Book Now Text">
+                {t('book_now')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -320,13 +330,19 @@ const styles = StyleSheet.create({
     elevation: 16,
   },
   dragHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: Colors.border,
-    borderRadius: 2,
+    width: 60,
+    height: 24,
     alignSelf: 'center',
     marginTop: 12,
     marginBottom: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dragBar: {
+    width: 40,
+    height: 6,
+    backgroundColor: Colors.border,
+    borderRadius: 3,
   },
   header: {
     height: HEADER_HEIGHT,
@@ -472,24 +488,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: 'Poppins-Regular',
     lineHeight: 20,
-  },
-  pickupContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.lightBlue,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: Colors.amcBlue,
-  },
-  pickupText: {
-    fontSize: 14,
-    color: Colors.amcBlue,
-    fontWeight: '600',
-    marginLeft: 8,
-    fontFamily: 'Poppins-SemiBold',
   },
   quantitySection: {
     marginBottom: 20,

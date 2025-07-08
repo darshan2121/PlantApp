@@ -3,6 +3,7 @@ export interface Plant {
   name: string;
   nameGujarati: string;
   image: string;
+  images?: string[];
   description: string;
   descriptionGujarati: string;
   category: string;

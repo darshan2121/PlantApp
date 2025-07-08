@@ -18,7 +18,7 @@ import { useApp } from '../../contexts/AppContext';
 
 export default function SignupScreen() {
   const router = useRouter();
-  const { setUser, language, setLanguage } = useApp();
+  const { setUser, language, setLanguage, t } = useApp();
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -35,16 +35,16 @@ export default function SignupScreen() {
     // Basic validation
     if (Object.values(formData).some(value => !value)) {
       Alert.alert(
-        language === 'gujarati' ? 'ભૂલ' : 'Error', 
-        language === 'gujarati' ? 'કૃપા કરીને બધી માહિતી ભરો' : 'Please fill in all fields'
+        t('error'),
+        t('fill_all_fields')
       );
       return;
     }
 
     if (formData.phone.length < 10) {
       Alert.alert(
-        language === 'gujarati' ? 'ભૂલ' : 'Error', 
-        language === 'gujarati' ? 'કૃપા કરીને યોગ્ય ફોન નંબર દાખલ કરો' : 'Please enter a valid phone number'
+        t('error'),
+        t('enter_valid_phone')
       );
       return;
     }
@@ -81,19 +81,17 @@ export default function SignupScreen() {
               <TouchableOpacity style={styles.languageButton} onPress={toggleLanguage}>
                 <Globe size={20} color={Colors.primary} />
                 <Text style={styles.languageText}>
-                  {language === 'english' ? 'ગુજરાતી' : 'English'}
+                  {t('toggle_language')}
                 </Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.titleContainer}>
               <Text style={styles.title}>
-                {language === 'gujarati' ? 'નોંધણી કરો' : 'Create Account'}
+                {t('signup_title')}
               </Text>
               <Text style={styles.subtitle}>
-                {language === 'gujarati' 
-                  ? 'મફત છોડ મેળવવા માટે નોંધણી કરો' 
-                  : 'Sign up to get free plants'}
+                {t('signup_subtitle')}
               </Text>
             </View>
 
@@ -102,7 +100,7 @@ export default function SignupScreen() {
                 <User size={20} color={Colors.textGrey} />
                 <TextInput
                   style={styles.input}
-                  placeholder={language === 'gujarati' ? 'પૂરું નામ' : 'Full Name'}
+                  placeholder={t('full_name')}
                   placeholderTextColor={Colors.textGrey}
                   value={formData.fullName}
                   onChangeText={(value) => handleInputChange('fullName', value)}
@@ -113,7 +111,7 @@ export default function SignupScreen() {
                 <Phone size={20} color={Colors.textGrey} />
                 <TextInput
                   style={styles.input}
-                  placeholder={language === 'gujarati' ? 'ફોન નંબર' : 'Phone Number'}
+                  placeholder={t('phone_number')}
                   placeholderTextColor={Colors.textGrey}
                   value={formData.phone}
                   onChangeText={(value) => handleInputChange('phone', value)}
@@ -123,14 +121,14 @@ export default function SignupScreen() {
               </View>
 
               <Text style={styles.sectionTitle}>
-                {language === 'gujarati' ? 'સરનામાની માહિતી' : 'Address Information'}
+                {t('address_info')}
               </Text>
 
               <View style={styles.inputContainer}>
                 <MapPin size={20} color={Colors.textGrey} />
                 <TextInput
                   style={styles.input}
-                  placeholder={language === 'gujarati' ? 'વિસ્તાર' : 'Area'}
+                  placeholder={t('area')}
                   placeholderTextColor={Colors.textGrey}
                   value={formData.area}
                   onChangeText={(value) => handleInputChange('area', value)}
@@ -141,7 +139,7 @@ export default function SignupScreen() {
                 <MapPin size={20} color={Colors.textGrey} />
                 <TextInput
                   style={styles.input}
-                  placeholder={language === 'gujarati' ? 'પિનકોડ' : 'Pincode'}
+                  placeholder={t('pincode')}
                   placeholderTextColor={Colors.textGrey}
                   value={formData.pincode}
                   onChangeText={(value) => handleInputChange('pincode', value)}
@@ -154,7 +152,7 @@ export default function SignupScreen() {
                 <MapPin size={20} color={Colors.textGrey} />
                 <TextInput
                   style={styles.input}
-                  placeholder={language === 'gujarati' ? 'વોર્ડ નામ' : 'Ward Name'}
+                  placeholder={t('ward_name')}
                   placeholderTextColor={Colors.textGrey}
                   value={formData.wardName}
                   onChangeText={(value) => handleInputChange('wardName', value)}
@@ -163,29 +161,25 @@ export default function SignupScreen() {
 
               <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
                 <Text style={styles.signupButtonText}>
-                  {language === 'gujarati' ? 'સાઇન અપ' : 'Sign Up'}
+                  {t('signup_button')}
                 </Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.footer}>
               <Text style={styles.footerText}>
-                {language === 'gujarati' 
-                  ? 'પહેલેથી એકાઉન્ટ છે? ' 
-                  : 'Already have an account? '}
+                {t('already_have_account')}
               </Text>
               <TouchableOpacity onPress={() => router.push('/auth/login')}>
                 <Text style={styles.loginLink}>
-                  {language === 'gujarati' ? 'લોગિન' : 'Login'}
+                  {t('login')}
                 </Text>
               </TouchableOpacity>
             </View>
 
             <View style={styles.amcFooter}>
               <Text style={styles.amcFooterText}>
-                {language === 'gujarati' 
-                  ? 'અમદાવાદ મહાનગરપાલિકાની પહેલ' 
-                  : 'An initiative by Ahmedabad Municipal Corporation'}
+                {t('amc_footer')}
               </Text>
             </View>
           </View>

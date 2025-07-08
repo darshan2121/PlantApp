@@ -16,18 +16,18 @@ import { useRouter } from 'expo-router';
 const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
-  const { user, setUser, orders, language, setLanguage } = useApp();
+  const { user, setUser, orders, language, setLanguage, t } = useApp();
   const router = useRouter();
 
   const handleLogout = () => {
     Alert.alert(
-      language === 'gujarati' ? 'લોગઆઉટ' : 'Logout',
-      language === 'gujarati' ? 'શું તમે ખરેખર લોગઆઉટ કરવા માંગો છો?' : 'Are you sure you want to logout?',
+      t('logout'),
+      t('logout_confirm'),
       [
-        { text: language === 'gujarati' ? 'રદ કરો' : 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         { 
-          text: language === 'gujarati' ? 'લોગઆઉટ' : 'Logout', 
-          style: 'destructive', 
+          text: t('logout'),
+          style: 'destructive',
           onPress: () => {
             setUser(null);
             router.replace('/auth/login');
@@ -50,7 +50,7 @@ export default function ProfileScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.emptyContainer}>
           <Text style={styles.emptyText}>
-            {language === 'gujarati' ? 'કૃપા કરીને તમારી પ્રોફાઇલ જોવા માટે લોગિન કરો' : 'Please login to view your profile'}
+            {t('login_to_view_profile')}
           </Text>
         </View>
       </SafeAreaView>
@@ -61,11 +61,11 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>
-          {language === 'gujarati' ? 'પ્રોફાઇલ' : 'Profile'}
+          {t('profile')}
         </Text>
-        <TouchableOpacity style={styles.languageButton} onPress={toggleLanguage}>
+        {/* <TouchableOpacity style={styles.languageButton} onPress={toggleLanguage}>
           <Globe size={20} color={Colors.primary} />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <View style={styles.profileCard}>
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
           <View style={styles.amcBadge}>
             <Heart size={16} color={Colors.white} />
             <Text style={styles.amcBadgeText}>
-              {language === 'gujarati' ? 'AMC સભ્ય' : 'AMC Member'}
+              {t('amc_member')}
             </Text>
           </View>
         </View>
@@ -102,7 +102,7 @@ export default function ProfileScreen() {
           <Package size={24} color={Colors.primary} />
           <Text style={styles.statNumber}>{orders.length}</Text>
           <Text style={styles.statLabel}>
-            {language === 'gujarati' ? 'કુલ ઓર્ડર' : 'Total Orders'}
+            {t('total_orders')}
           </Text>
         </View>
         
@@ -114,7 +114,7 @@ export default function ProfileScreen() {
             )}
           </Text>
           <Text style={styles.statLabel}>
-            {language === 'gujarati' ? 'કુલ છોડ' : 'Total Plants'}
+            {t('total_plants_label')}
           </Text>
         </View>
       </View>
@@ -123,7 +123,7 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.actionButton} onPress={handleViewOrders}>
           <Package size={20} color={Colors.primary} />
           <Text style={styles.actionText}>
-            {language === 'gujarati' ? 'ઓર્ડર હિસ્ટ્રી જુઓ' : 'View Order History'}
+            {t('view_order_history')}
           </Text>
           {orders.length > 0 && (
             <View style={styles.orderBadge}>
@@ -135,16 +135,14 @@ export default function ProfileScreen() {
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <LogOut size={20} color={Colors.error} />
           <Text style={styles.logoutText}>
-            {language === 'gujarati' ? 'લોગઆઉટ' : 'Logout'}
+            {t('logout')}
           </Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.amcFooter}>
         <Text style={styles.amcFooterText}>
-          {language === 'gujarati' 
-            ? 'અમદાવાદ મહાનગરપાલિકાની હરિયાળી પહેલ' 
-            : 'Ahmedabad Municipal Corporation Green Initiative'}
+          {t('amc_footer')}
         </Text>
       </View>
     </SafeAreaView>
@@ -158,10 +156,11 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: 20,
-    paddingTop: 10,
+    paddingTop: 40,
   },
   title: {
     fontSize: 24,

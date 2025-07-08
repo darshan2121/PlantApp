@@ -19,7 +19,7 @@ import { CartItem } from '../../types';
 const { width } = Dimensions.get('window');
 
 export default function CartScreen() {
-  const { cart, updateQuantity, removeFromCart, clearCart, addOrder, language } = useApp();
+  const { cart, updateQuantity, removeFromCart, clearCart, addOrder, language, t } = useApp();
   const router = useRouter();
 
   const handleBookPlants = () => {
@@ -63,25 +63,33 @@ export default function CartScreen() {
     <View style={styles.cartItem}>
       <Image source={{ uri: item.plant.image }} style={styles.itemImage} />
       <View style={styles.itemDetails}>
-        <Text style={styles.itemName}>
+        <Text style={styles.itemName} numberOfLines={2} ellipsizeMode="tail">
           {language === 'gujarati' ? item.plant.nameGujarati : item.plant.name}
         </Text>
-        <Text style={styles.itemTag}>{item.plant.tag}</Text>
-        <Text style={styles.freeText}>
-          {language === 'gujarati' ? 'મફત' : 'FREE'}
+        <Text style={styles.itemTag} numberOfLines={1} ellipsizeMode="tail">{item.plant.tag}</Text>
+        <Text style={styles.freeText} numberOfLines={1} ellipsizeMode="tail">
+          {t('free')}
         </Text>
       </View>
       <View style={styles.quantityContainer}>
         <TouchableOpacity
           style={styles.quantityButton}
           onPress={() => updateQuantity(item.plant.id, item.quantity - 1)}
+          activeOpacity={0.7}
+          accessible
+          accessibilityLabel="Decrease Quantity"
+          testID={`decrease-quantity-${item.plant.id}`}
         >
           <Minus size={16} color={Colors.primary} />
         </TouchableOpacity>
-        <Text style={styles.quantityText}>{item.quantity}</Text>
+        <Text style={styles.quantityText} accessibilityLabel="Quantity Display" testID={`quantity-display-${item.plant.id}`}>{item.quantity}</Text>
         <TouchableOpacity
           style={styles.quantityButton}
           onPress={() => updateQuantity(item.plant.id, item.quantity + 1)}
+          activeOpacity={0.7}
+          accessible
+          accessibilityLabel="Increase Quantity"
+          testID={`increase-quantity-${item.plant.id}`}
         >
           <Plus size={16} color={Colors.primary} />
         </TouchableOpacity>
@@ -89,6 +97,10 @@ export default function CartScreen() {
       <TouchableOpacity
         style={styles.removeButton}
         onPress={() => handleRemoveItem(item.plant.id)}
+        activeOpacity={0.7}
+        accessible
+        accessibilityLabel="Remove Item"
+        testID={`remove-item-${item.plant.id}`}
       >
         <Trash2 size={20} color={Colors.error} />
       </TouchableOpacity>
@@ -97,26 +109,30 @@ export default function CartScreen() {
 
   if (cart.length === 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} accessible accessibilityLabel="Cart Screen Empty State">
         <View style={styles.header}>
-          <Text style={styles.title}>
-            {language === 'gujarati' ? 'શોપિંગ કાર્ટ' : 'Shopping Cart'}
+          <Text style={styles.title} accessibilityLabel="Cart Title">
+            {t('shopping_cart')}
           </Text>
         </View>
         <View style={styles.emptyContainer}>
           <ShoppingBag size={80} color={Colors.textGrey} />
-          <Text style={styles.emptyText}>
-            {language === 'gujarati' ? 'તમારું કાર્ટ ખાલી છે' : 'Your cart is empty'}
+          <Text style={styles.emptyText} accessibilityLabel="Cart Empty Text">
+            {t('cart_empty')}
           </Text>
-          <Text style={styles.emptySubtext}>
-            {language === 'gujarati' ? 'શરૂ કરવા માટે કેટલાક છોડ ઉમેરો' : 'Add some plants to get started'}
+          <Text style={styles.emptySubtext} accessibilityLabel="Cart Empty Subtext">
+            {t('cart_empty_subtext')}
           </Text>
           <TouchableOpacity 
             style={styles.shopButton}
             onPress={() => router.push('/(tabs)')}
+            activeOpacity={0.7}
+            accessible
+            accessibilityLabel="Start Shopping Button"
+            testID="start-shopping"
           >
-            <Text style={styles.shopButtonText}>
-              {language === 'gujarati' ? 'શોપિંગ શરૂ કરો' : 'Start Shopping'}
+            <Text style={styles.shopButtonText} accessibilityLabel="Start Shopping Text">
+              {t('start_shopping')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -125,15 +141,13 @@ export default function CartScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} accessible accessibilityLabel="Cart Screen">
       <View style={styles.header}>
-        <Text style={styles.title}>
-          {language === 'gujarati' ? 'શોપિંગ કાર્ટ' : 'Shopping Cart'}
+        <Text style={styles.title} accessibilityLabel="Cart Title">
+          {t('shopping_cart')}
         </Text>
-        <Text style={styles.itemCount}>
-          {language === 'gujarati' 
-            ? `${cart.length} આઇટમ${cart.length > 1 ? 'સ' : ''}` 
-            : `${cart.length} item${cart.length > 1 ? 's' : ''}`}
+        <Text style={styles.itemCount} accessibilityLabel="Cart Item Count">
+          {t('cart_items_count', { count: cart.length })}
         </Text>
       </View>
 
@@ -143,20 +157,22 @@ export default function CartScreen() {
         keyExtractor={(item) => item.plant.id}
         contentContainerStyle={styles.cartList}
         showsVerticalScrollIndicator={false}
+        accessibilityLabel="Cart List"
+        testID="cart-list"
       />
 
       <View style={styles.footer}>
         <View style={styles.totalContainer}>
-          <Text style={styles.totalLabel}>
-            {language === 'gujarati' ? 'કુલ છોડ:' : 'Total Plants:'}
+          <Text style={styles.totalLabel} accessibilityLabel="Total Plants Label">
+            {t('total_plants_label')}
           </Text>
-          <Text style={styles.totalAmount}>
+          <Text style={styles.totalAmount} accessibilityLabel="Total Plants Amount">
             {cart.reduce((total, item) => total + item.quantity, 0)}
           </Text>
         </View>
-        <TouchableOpacity style={styles.bookButton} onPress={handleBookPlants}>
-          <Text style={styles.bookButtonText}>
-            {language === 'gujarati' ? 'છોડ બુક કરો' : 'Book Plants'}
+        <TouchableOpacity style={styles.bookButton} onPress={handleBookPlants} activeOpacity={0.7} accessible accessibilityLabel="Book Plants Button" testID="book-plants">
+          <Text style={styles.bookButtonText} accessibilityLabel="Book Plants Text">
+            {t('book_plants')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -171,7 +187,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 10,
+    paddingTop: 40,
   },
   title: {
     fontSize: 24,

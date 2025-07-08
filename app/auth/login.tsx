@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Image,
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -20,23 +21,23 @@ const { width } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { setUser, language, setLanguage } = useApp();
+  const { setUser, language, setLanguage, t } = useApp();
   const [phone, setPhone] = useState('');
   const [name, setName] = useState('');
 
   const handleLogin = () => {
     if (!phone || !name) {
       Alert.alert(
-        language === 'gujarati' ? 'ભૂલ' : 'Error', 
-        language === 'gujarati' ? 'કૃપા કરીને બધી માહિતી ભરો' : 'Please fill in all fields'
+        t('error'),
+        t('fill_all_fields')
       );
       return;
     }
 
     if (phone.length < 10) {
       Alert.alert(
-        language === 'gujarati' ? 'ભૂલ' : 'Error', 
-        language === 'gujarati' ? 'કૃપા કરીને યોગ્ય ફોન નંબર દાખલ કરો' : 'Please enter a valid phone number'
+        t('error'),
+        t('enter_valid_phone')
       );
       return;
     }
@@ -71,28 +72,28 @@ export default function LoginScreen() {
             <TouchableOpacity style={styles.languageButton} onPress={toggleLanguage}>
               <Globe size={20} color={Colors.primary} />
               <Text style={styles.languageText}>
-                {language === 'english' ? 'ગુજરાતી' : 'English'}
+                {t('toggle_language')}
               </Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.titleContainer}>
             <Text style={styles.title}>
-              {language === 'gujarati' ? 'સ્વાગત છે!' : 'Welcome!'}
+              {t('welcome')}
             </Text>
             <Text style={styles.subtitle}>
-              {language === 'gujarati' 
-                ? 'મફત છોડ મેળવવા માટે લોગિન કરો' 
-                : 'Login to get free plants'}
+              {t('login_subtitle')}
             </Text>
           </View>
+
+
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
               <User size={20} color={Colors.textGrey} />
               <TextInput
                 style={styles.input}
-                placeholder={language === 'gujarati' ? 'તમારું નામ' : 'Your Name'}
+                placeholder={t('your_name')}
                 placeholderTextColor={Colors.textGrey}
                 value={name}
                 onChangeText={setName}
@@ -103,7 +104,7 @@ export default function LoginScreen() {
               <Phone size={20} color={Colors.textGrey} />
               <TextInput
                 style={styles.input}
-                placeholder={language === 'gujarati' ? 'ફોન નંબર' : 'Phone Number'}
+                placeholder={t('phone_number')}
                 placeholderTextColor={Colors.textGrey}
                 value={phone}
                 onChangeText={setPhone}
@@ -114,29 +115,25 @@ export default function LoginScreen() {
 
             <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
               <Text style={styles.loginButtonText}>
-                {language === 'gujarati' ? 'લોગિન' : 'Login'}
+                {t('login')}
               </Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>
-              {language === 'gujarati' 
-                ? 'નવા વપરાશકર્તા છો? ' 
-                : "Don't have an account? "}
+              {t('no_account')}
             </Text>
             <TouchableOpacity onPress={() => router.push('/auth/signup')}>
               <Text style={styles.signupLink}>
-                {language === 'gujarati' ? 'સાઇન અપ' : 'Sign Up'}
+                {t('signup')}
               </Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.amcFooter}>
             <Text style={styles.amcFooterText}>
-              {language === 'gujarati' 
-                ? 'અમદાવાદ મહાનગરપાલિકાની પહેલ' 
-                : 'An initiative by Ahmedabad Municipal Corporation'}
+              {t('amc_footer_login')}
             </Text>
           </View>
         </View>

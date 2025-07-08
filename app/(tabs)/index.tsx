@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   FlatList,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { Search, Filter, Globe } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
@@ -19,7 +20,7 @@ import { Plant } from '../../types';
 import { useApp } from '../../contexts/AppContext';
 import { useRouter } from 'expo-router';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const categories = [
   { key: 'All', english: 'All', gujarati: 'બધા' },
@@ -29,7 +30,7 @@ const categories = [
 ];
 
 export default function HomeScreen() {
-  const { user, addToCart, language, setLanguage } = useApp();
+  const { user, addToCart, language, setLanguage, t } = useApp();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -63,42 +64,44 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
+    <SafeAreaView style={styles.container} accessible accessibilityLabel="Home Screen">
+      <View style={[styles.header, { paddingTop: Platform.OS === 'android' ? 30 : 0 }]}>
         <View style={styles.headerTop}>
           <View style={styles.greetingContainer}>
-            <Text style={styles.greeting}>
-              {language === 'gujarati' 
-                ? `નમસ્તે, ${user?.fullName || 'મિત્ર'}!` 
-                : `Hello, ${user?.fullName || 'Friend'}!`}
+            <Text style={[styles.greeting, { fontSize: width < 350 ? 18 : width < 400 ? 22 : 24 }]}
+              accessibilityLabel="Greeting Text">
+              {t('greeting', { name: user?.fullName || (language === 'gujarati' ? 'મિત્ર' : 'Friend') })}
             </Text>
-            <Text style={styles.subtitle}>
-              {language === 'gujarati' 
-                ? 'તમારા માટે યોગ્ય છોડ શોધો' 
-                : 'Find the perfect plant for you'}
+            <Text style={[styles.subtitle, { fontSize: width < 350 ? 12 : 16 }]}
+              accessibilityLabel="Subtitle Text">
+              {t('find_plant')}
             </Text>
           </View>
-          <TouchableOpacity style={styles.languageButton} onPress={toggleLanguage}>
+          <TouchableOpacity style={styles.languageButton} onPress={toggleLanguage} activeOpacity={0.7} accessible accessibilityLabel="Toggle Language Button">
             <Globe size={20} color={Colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Search size={20} color={Colors.textGrey} />
+        <View style={[styles.searchBar, { paddingVertical: width < 350 ? 6 : 8, borderRadius: width < 350 ? 10 : 14 }]}
+          accessible accessibilityLabel="Search Bar">
+          <Search size={18} color={Colors.textGrey} />
           <TextInput
-            style={styles.searchInput}
-            placeholder={language === 'gujarati' ? 'છોડ શોધો...' : 'Search plants...'}
+            style={[styles.searchInput, { fontSize: width < 350 ? 13 : 16 }]}
+            placeholder={t('search_placeholder')}
             placeholderTextColor={Colors.textGrey}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            accessibilityLabel="Search Input"
+            accessible
+            testID="search-input"
           />
         </View>
       </View>
 
       <View style={styles.categoriesContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} accessible accessibilityLabel="Categories List">
           {categories.map((category) => (
             <TouchableOpacity
               key={category.key}
@@ -107,14 +110,20 @@ export default function HomeScreen() {
                 selectedCategory === category.key && styles.selectedCategoryChip,
               ]}
               onPress={() => setSelectedCategory(category.key)}
+              activeOpacity={0.7}
+              accessible
+              accessibilityLabel={`Category: ${t(`category_${category.key.toLowerCase()}`)}`}
+              testID={`category-chip-${category.key}`}
             >
               <Text
                 style={[
                   styles.categoryText,
                   selectedCategory === category.key && styles.selectedCategoryText,
                 ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
               >
-                {language === 'gujarati' ? category.gujarati : category.english}
+                {t(`category_${category.key.toLowerCase()}`)}
               </Text>
             </TouchableOpacity>
           ))}
@@ -122,10 +131,8 @@ export default function HomeScreen() {
       </View>
 
       <View style={styles.resultsHeader}>
-        <Text style={styles.resultsText}>
-          {language === 'gujarati' 
-            ? `${filteredPlants.length} છોડ મળ્યા` 
-            : `${filteredPlants.length} plants found`}
+        <Text style={styles.resultsText} accessibilityLabel="Results Count">
+          {t('plants_found', { count: filteredPlants.length })}
         </Text>
       </View>
 
@@ -136,6 +143,7 @@ export default function HomeScreen() {
             plant={item}
             onPress={() => handlePlantPress(item)}
             onAddToCart={() => handleAddToCart(item)}
+            testID={`plant-card-${item.id}`}
           />
         )}
         keyExtractor={(item) => item.id}
@@ -143,6 +151,8 @@ export default function HomeScreen() {
         contentContainerStyle={styles.plantsContainer}
         showsVerticalScrollIndicator={false}
         columnWrapperStyle={styles.row}
+        accessibilityLabel="Plant List"
+        testID="plant-list"
       />
 
       <PlantDetailsModal

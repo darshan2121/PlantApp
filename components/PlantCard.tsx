@@ -9,13 +9,14 @@ interface PlantCardProps {
   plant: Plant;
   onPress: () => void;
   onAddToCart: () => void;
+  testID?: string;
 }
 
 const { width } = Dimensions.get('window');
 const cardWidth = (width - 48) / 2; // 2 columns with padding
 
-export const PlantCard: React.FC<PlantCardProps> = ({ plant, onPress, onAddToCart }) => {
-  const { language } = useApp();
+export const PlantCard: React.FC<PlantCardProps> = ({ plant, onPress, onAddToCart, testID }) => {
+  const { language, t } = useApp();
   
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
@@ -26,36 +27,57 @@ export const PlantCard: React.FC<PlantCardProps> = ({ plant, onPress, onAddToCar
     }
   };
 
+  const getDifficultyKey = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Easy': return t('easy');
+      case 'Medium': return t('medium');
+      case 'Hard': return t('hard');
+      default: return difficulty;
+    }
+  };
+
   return (
-    <TouchableOpacity style={[styles.container, { width: cardWidth }]} onPress={onPress}>
+    <TouchableOpacity
+      style={[styles.container, { width: cardWidth }]}
+      onPress={onPress}
+      activeOpacity={0.7}
+      accessible
+      accessibilityLabel={`Plant Card: ${t('greeting', { name: language === 'gujarati' ? plant.nameGujarati : plant.name })}`}
+      testID={testID}
+    >
       <View style={styles.imageContainer}>
         <Image source={{ uri: plant.image }} style={styles.image} />
         <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(plant.difficulty) }]}>
-          <Text style={styles.difficultyText}>
-            {language === 'gujarati' ? 
-              (plant.difficulty === 'Easy' ? 'સરળ' : plant.difficulty === 'Medium' ? 'મધ્યમ' : 'મુશ્કેલ') 
-              : plant.difficulty}
+          <Text style={styles.difficultyText} numberOfLines={1} ellipsizeMode="tail">
+            {getDifficultyKey(plant.difficulty)}
           </Text>
         </View>
       </View>
       
       <View style={styles.content}>
-        <Text style={styles.name} numberOfLines={2}>
-          {language === 'gujarati' ? plant.nameGujarati : plant.name}
+        <Text style={styles.name} numberOfLines={2} ellipsizeMode="tail">
+          {t('plant_name', { name: language === 'gujarati' ? plant.nameGujarati : plant.name })}
         </Text>
         
         <View style={styles.tagContainer}>
           <Leaf size={14} color={Colors.primary} />
-          <Text style={styles.tag} numberOfLines={1}>
+          <Text style={styles.tag} numberOfLines={1} ellipsizeMode="tail">
             {plant.tag}
           </Text>
         </View>
         
         <View style={styles.footer}>
-          <Text style={styles.freeText}>
-            {language === 'gujarati' ? 'મફત' : 'FREE'}
+          <Text style={styles.freeText} numberOfLines={1} ellipsizeMode="tail">
+            {t('free')}
           </Text>
-          <TouchableOpacity style={styles.addButton} onPress={onAddToCart}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={onAddToCart}
+            activeOpacity={0.7}
+            accessible
+            accessibilityLabel={`Add ${language === 'gujarati' ? plant.nameGujarati : plant.name} to cart`}
+            testID={`add-to-cart-${plant.id}`}
+          >
             <Plus size={18} color={Colors.white} />
           </TouchableOpacity>
         </View>

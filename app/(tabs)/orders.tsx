@@ -16,7 +16,7 @@ import { Order } from '../../types';
 const { width } = Dimensions.get('window');
 
 export default function OrdersScreen() {
-  const { orders, language } = useApp();
+  const { orders, language, t } = useApp();
 
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
@@ -49,23 +49,20 @@ export default function OrdersScreen() {
   };
 
   const getStatusText = (status: Order['status']) => {
-    if (language === 'gujarati') {
-      switch (status) {
-        case 'Requested': return 'વિનંતી કરેલ';
-        case 'Approved': return 'મંજૂર';
-        case 'Ready for Pickup': return 'લેવા માટે તૈયાર';
-        case 'Delivered': return 'પહોંચાડેલ';
-        default: return status;
-      }
+    switch (status) {
+      case 'Requested': return t('order_status_requested');
+      case 'Approved': return t('order_status_approved');
+      case 'Ready for Pickup': return t('order_status_ready');
+      case 'Delivered': return t('order_status_delivered');
+      default: return status;
     }
-    return status;
   };
 
   const renderOrderItem = ({ item }: { item: Order }) => (
     <View style={styles.orderCard}>
       <View style={styles.orderHeader}>
         <Text style={styles.orderId}>
-          {language === 'gujarati' ? `ઓર્ડર #${item.id}` : `Order #${item.id}`}
+          {t('order_id', { id: item.id })}
         </Text>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
           {getStatusIcon(item.status)}
@@ -74,15 +71,7 @@ export default function OrdersScreen() {
       </View>
       
       <Text style={styles.orderDate}>
-        {language === 'gujarati' ? 'બુકિંગ તારીખ: ' : 'Booking Date: '}
-        {new Date(item.bookingDate).toLocaleDateString(
-          language === 'gujarati' ? 'gu-IN' : 'en-US',
-          {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-          }
-        )}
+        {t('booking_date', { date: new Date(item.bookingDate).toLocaleDateString(language === 'gujarati' ? 'gu-IN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) })}
       </Text>
 
       <View style={styles.plantsContainer}>
@@ -91,14 +80,14 @@ export default function OrdersScreen() {
             <Image source={{ uri: cartItem.plant.image }} style={styles.plantImage} />
             <View style={styles.plantDetails}>
               <Text style={styles.plantName}>
-                {language === 'gujarati' ? cartItem.plant.nameGujarati : cartItem.plant.name}
+                {t('plant_name', { name: language === 'gujarati' ? cartItem.plant.nameGujarati : cartItem.plant.name })}
               </Text>
               <Text style={styles.plantQuantity}>
-                {language === 'gujarati' ? `સંખ્યા: ${cartItem.quantity}` : `Quantity: ${cartItem.quantity}`}
+                {t('quantity', { count: cartItem.quantity })}
               </Text>
             </View>
             <Text style={styles.freeText}>
-              {language === 'gujarati' ? 'મફત' : 'FREE'}
+              {t('free')}
             </Text>
           </View>
         ))}
@@ -106,18 +95,14 @@ export default function OrdersScreen() {
 
       <View style={styles.orderFooter}>
         <Text style={styles.totalPlants}>
-          {language === 'gujarati' 
-            ? `કુલ છોડ: ${item.plants.reduce((total, plant) => total + plant.quantity, 0)}` 
-            : `Total Plants: ${item.plants.reduce((total, plant) => total + plant.quantity, 0)}`}
+          {t('total_plants', { count: item.plants.reduce((total, plant) => total + plant.quantity, 0) })}
         </Text>
       </View>
 
       {item.status === 'Ready for Pickup' && (
         <View style={styles.pickupInfo}>
           <Text style={styles.pickupText}>
-            {language === 'gujarati' 
-              ? '📍 AMC નર્સરી, નવરંગપુરા થી લો' 
-              : '📍 Pickup from AMC Nursery, Navrangpura'}
+            {t('pickup_info')}
           </Text>
         </View>
       )}
@@ -129,16 +114,16 @@ export default function OrdersScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>
-            {language === 'gujarati' ? 'મારા ઓર્ડર' : 'My Orders'}
+            {t('my_orders')}
           </Text>
         </View>
         <View style={styles.emptyContainer}>
           <Package size={80} color={Colors.textGrey} />
           <Text style={styles.emptyText}>
-            {language === 'gujarati' ? 'હજુ સુધી કોઈ ઓર્ડર નથી' : 'No orders yet'}
+            {t('orders_empty')}
           </Text>
           <Text style={styles.emptySubtext}>
-            {language === 'gujarati' ? 'તમારા બુક કરેલા છોડ અહીં દેખાશે' : 'Your booked plants will appear here'}
+            {t('orders_empty_subtext')}
           </Text>
         </View>
       </SafeAreaView>
@@ -149,12 +134,10 @@ export default function OrdersScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>
-          {language === 'gujarati' ? 'મારા ઓર્ડર' : 'My Orders'}
+          {t('my_orders')}
         </Text>
         <Text style={styles.orderCount}>
-          {language === 'gujarati' 
-            ? `${orders.length} ઓર્ડર${orders.length > 1 ? 'સ' : ''}` 
-            : `${orders.length} order${orders.length > 1 ? 's' : ''}`}
+          {t('orders_count', { count: orders.length })}
         </Text>
       </View>
 
@@ -176,7 +159,7 @@ const styles = StyleSheet.create({
   },
   header: {
     padding: 20,
-    paddingTop: 10,
+    paddingTop: 40,
   },
   title: {
     fontSize: 24,

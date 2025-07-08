@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "bolt-expo-nativewind",
-    "slug": "bolt-expo-nativewind",
+    "name": "PlantApp",
+    "slug": "PlantApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -29,6 +29,9 @@
       "eas": {
         "projectId": "991b53e7-7f60-4025-b396-464ad898f25f"
       }
+    },
+    "android": {
+      "package": "com.plantApp"
     }
   }
 }

@@ -1,5 +1,9 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { Plant, CartItem, Order, User } from '../types';
+import * as Localization from 'expo-localization';
+import { I18n } from 'i18n-js';
+import en from '../locales/en.json';
+import gu from '../locales/gu.json';
 
 interface AppContextType {
   user: User | null;
@@ -14,6 +18,7 @@ interface AppContextType {
   clearCart: () => void;
   addOrder: (order: Order) => void;
   getCartItemCount: () => number;
+  t: (key: string, options?: any) => string;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -26,11 +31,17 @@ export const useApp = () => {
   return context;
 };
 
+const i18n = new I18n({ en, gu });
+
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [language, setLanguage] = useState<'english' | 'gujarati'>('english');
+
+  useEffect(() => {
+    i18n.locale = language === 'gujarati' ? 'gu' : 'en';
+  }, [language]);
 
   const addToCart = (plant: Plant) => {
     setCart(currentCart => {
@@ -74,6 +85,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return cart.reduce((total, item) => total + item.quantity, 0);
   };
 
+  const t = (key: string, options?: any) => i18n.t(key, options);
+
   return (
     <AppContext.Provider
       value={{
@@ -89,6 +102,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         clearCart,
         addOrder,
         getCartItemCount,
+        t,
       }}
     >
       {children}
