@@ -4,6 +4,7 @@ import { Plus, Leaf } from 'lucide-react-native';
 import { Plant } from '../types';
 import { Colors } from '../constants/Colors';
 import { useApp } from '../contexts/AppContext';
+import { IMAGE_BASE_URL } from '../store/api';
 
 interface PlantCardProps {
   plant: Plant;
@@ -46,12 +47,19 @@ export const PlantCard: React.FC<PlantCardProps> = ({ plant, onPress, onAddToCar
       testID={testID}
     >
       <View style={styles.imageContainer}>
-        <Image source={{ uri: plant.image }} style={styles.image} />
-        <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(plant.difficulty) }]}>
+        <Image
+          source={{
+            uri:
+              (plant as any).imageUrlFull ||
+              ((plant as any).imageUrl ? `${IMAGE_BASE_URL}${(plant as any).imageUrl}` : plant.image)
+          }}
+          style={styles.image}
+        />
+        {/* <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(plant.difficulty) }]}>
           <Text style={styles.difficultyText} numberOfLines={1} ellipsizeMode="tail">
             {getDifficultyKey(plant.difficulty)}
           </Text>
-        </View>
+        </View> */}
       </View>
       
       <View style={styles.content}>

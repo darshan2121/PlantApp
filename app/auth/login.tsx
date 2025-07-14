@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,49 +13,41 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Phone, User, Globe } from 'lucide-react-native';
+import { Phone, User, Globe, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
 import { useApp } from '../../contexts/AppContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser } from '../../store/userSlice';
+import { RootState, AppDispatch } from '../../store';
 
 const { width } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { setUser, language, setLanguage, t } = useApp();
-  const [phone, setPhone] = useState('');
-  const [name, setName] = useState('');
+  const { language, setLanguage, t } = useApp();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const dispatch: AppDispatch = useDispatch();
+  const { user, token, loading, error } = useSelector((state: RootState) => state.user);
 
   const handleLogin = () => {
-    if (!phone || !name) {
+    if (!email || !password) {
       Alert.alert(
         t('error'),
         t('fill_all_fields')
       );
       return;
     }
-
-    if (phone.length < 10) {
-      Alert.alert(
-        t('error'),
-        t('enter_valid_phone')
-      );
-      return;
-    }
-
-    // Simple validation for demo
-    setUser({
-      id: '1',
-      fullName: name,
-      phone: phone,
-      address: {
-        area: 'Ahmedabad',
-        pincode: '380001',
-        wardName: 'Ward 1',
-      },
-      language: language,
-    });
-    router.replace('/(tabs)');
+    dispatch(loginUser({ email, password }));
   };
+
+  useEffect(() => {
+    console.log('Login effect:', { user, token });
+    if (user && token) {
+      router.replace('/(tabs)');
+    }
+  }, [user, token]);
 
   const toggleLanguage = () => {
     setLanguage(language === 'english' ? 'gujarati' : 'english');
@@ -90,34 +82,41 @@ export default function LoginScreen() {
 
           <View style={styles.form}>
             <View style={styles.inputContainer}>
-              <User size={20} color={Colors.textGrey} />
+              <Mail size={20} color={Colors.textGrey} />
               <TextInput
                 style={styles.input}
-                placeholder={t('your_name')}
+                placeholder="Email"
                 placeholderTextColor={Colors.textGrey}
-                value={name}
-                onChangeText={setName}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
               />
             </View>
-
             <View style={styles.inputContainer}>
-              <Phone size={20} color={Colors.textGrey} />
+              <Lock size={20} color={Colors.textGrey} />
               <TextInput
                 style={styles.input}
-                placeholder={t('phone_number')}
+                placeholder="Password"
                 placeholderTextColor={Colors.textGrey}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="phone-pad"
-                maxLength={10}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
               />
+              <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
+                {showPassword ? (
+                  <EyeOff size={20} color={Colors.textGrey} />
+                ) : (
+                  <Eye size={20} color={Colors.textGrey} />
+                )}
+              </TouchableOpacity>
             </View>
-
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+            <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
               <Text style={styles.loginButtonText}>
-                {t('login')}
+                {loading ? 'Loading...' : 'Login'}
               </Text>
             </TouchableOpacity>
+            {error && <Text style={{ color: 'red', marginTop: 8 }}>{'Login failed'}: {error}</Text>}
           </View>
 
           <View style={styles.footer}>

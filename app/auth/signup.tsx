@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,20 +12,31 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { User, Phone, MapPin, Globe } from 'lucide-react-native';
+import { User, Phone, MapPin, Globe, Mail, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
 import { useApp } from '../../contexts/AppContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { signupUser } from '../../store/userSlice';
+import { RootState, AppDispatch } from '../../store';
 
 export default function SignupScreen() {
   const router = useRouter();
-  const { setUser, language, setLanguage, t } = useApp();
+  const { language, setLanguage, t } = useApp();
   const [formData, setFormData] = useState({
-    fullName: '',
-    phone: '',
+    name: '',
+    email: '',
+    mobile: '',
+    password: '',
     area: '',
-    pincode: '',
-    wardName: '',
+    ward: '',
+    pinCode: '',
+    city: '',
+    state: '',
+    country: '',
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const dispatch: AppDispatch = useDispatch();
+  const { user, loading, error } = useSelector((state: RootState) => state.user);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -40,30 +51,33 @@ export default function SignupScreen() {
       );
       return;
     }
-
-    if (formData.phone.length < 10) {
-      Alert.alert(
-        t('error'),
-        t('enter_valid_phone')
-      );
-      return;
-    }
-
-    // Create user
-    setUser({
-      id: '1',
-      fullName: formData.fullName,
-      phone: formData.phone,
+    const signupBody = {
+      name: formData.name,
+      email: formData.email,
+      mobile: formData.mobile,
+      password: formData.password,
       address: {
         area: formData.area,
-        pincode: formData.pincode,
-        wardName: formData.wardName,
+        ward: formData.ward,
+        pinCode: formData.pinCode,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
       },
-      language: language,
-    });
-
-    router.replace('/(tabs)');
+      location: {
+        latitude: 2.289,
+        longitude: 8.2892,
+      },
+    };
+    console.log('Signup request body:', signupBody);
+    dispatch(signupUser(signupBody));
   };
+
+  useEffect(() => {
+    if (user) {
+      router.replace('/(tabs)');
+    }
+  }, [user]);
 
   const toggleLanguage = () => {
     setLanguage(language === 'english' ? 'gujarati' : 'english');
@@ -100,70 +114,123 @@ export default function SignupScreen() {
                 <User size={20} color={Colors.textGrey} />
                 <TextInput
                   style={styles.input}
-                  placeholder={t('full_name')}
+                  placeholder="Full Name"
                   placeholderTextColor={Colors.textGrey}
-                  value={formData.fullName}
-                  onChangeText={(value) => handleInputChange('fullName', value)}
+                  value={formData.name}
+                  onChangeText={(value) => handleInputChange('name', value)}
                 />
               </View>
-
+              <View style={styles.inputContainer}>
+                <Mail size={20} color={Colors.textGrey} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Email"
+                  placeholderTextColor={Colors.textGrey}
+                  value={formData.email}
+                  onChangeText={(value) => handleInputChange('email', value)}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
               <View style={styles.inputContainer}>
                 <Phone size={20} color={Colors.textGrey} />
                 <TextInput
                   style={styles.input}
-                  placeholder={t('phone_number')}
+                  placeholder="Mobile"
                   placeholderTextColor={Colors.textGrey}
-                  value={formData.phone}
-                  onChangeText={(value) => handleInputChange('phone', value)}
+                  value={formData.mobile}
+                  onChangeText={(value) => handleInputChange('mobile', value)}
                   keyboardType="phone-pad"
                   maxLength={10}
                 />
               </View>
-
-              <Text style={styles.sectionTitle}>
-                {t('address_info')}
-              </Text>
-
+              <View style={styles.inputContainer}>
+                <Lock size={20} color={Colors.textGrey} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor={Colors.textGrey}
+                  value={formData.password}
+                  onChangeText={(value) => handleInputChange('password', value)}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword((prev) => !prev)}>
+                  {showPassword ? (
+                    <EyeOff size={20} color={Colors.textGrey} />
+                  ) : (
+                    <Eye size={20} color={Colors.textGrey} />
+                  )}
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.sectionTitle}>Address Info</Text>
               <View style={styles.inputContainer}>
                 <MapPin size={20} color={Colors.textGrey} />
                 <TextInput
                   style={styles.input}
-                  placeholder={t('area')}
+                  placeholder="Area"
                   placeholderTextColor={Colors.textGrey}
                   value={formData.area}
                   onChangeText={(value) => handleInputChange('area', value)}
                 />
               </View>
-
               <View style={styles.inputContainer}>
                 <MapPin size={20} color={Colors.textGrey} />
                 <TextInput
                   style={styles.input}
-                  placeholder={t('pincode')}
+                  placeholder="Ward"
                   placeholderTextColor={Colors.textGrey}
-                  value={formData.pincode}
-                  onChangeText={(value) => handleInputChange('pincode', value)}
+                  value={formData.ward}
+                  onChangeText={(value) => handleInputChange('ward', value)}
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <MapPin size={20} color={Colors.textGrey} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Pincode"
+                  placeholderTextColor={Colors.textGrey}
+                  value={formData.pinCode}
+                  onChangeText={(value) => handleInputChange('pinCode', value)}
                   keyboardType="numeric"
                   maxLength={6}
                 />
               </View>
-
               <View style={styles.inputContainer}>
                 <MapPin size={20} color={Colors.textGrey} />
                 <TextInput
                   style={styles.input}
-                  placeholder={t('ward_name')}
+                  placeholder="City"
                   placeholderTextColor={Colors.textGrey}
-                  value={formData.wardName}
-                  onChangeText={(value) => handleInputChange('wardName', value)}
+                  value={formData.city}
+                  onChangeText={(value) => handleInputChange('city', value)}
                 />
               </View>
-
-              <TouchableOpacity style={styles.signupButton} onPress={handleSignup}>
+              <View style={styles.inputContainer}>
+                <MapPin size={20} color={Colors.textGrey} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="State"
+                  placeholderTextColor={Colors.textGrey}
+                  value={formData.state}
+                  onChangeText={(value) => handleInputChange('state', value)}
+                />
+              </View>
+              <View style={styles.inputContainer}>
+                <MapPin size={20} color={Colors.textGrey} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Country"
+                  placeholderTextColor={Colors.textGrey}
+                  value={formData.country}
+                  onChangeText={(value) => handleInputChange('country', value)}
+                />
+              </View>
+              <TouchableOpacity style={styles.signupButton} onPress={handleSignup} disabled={loading}>
                 <Text style={styles.signupButtonText}>
-                  {t('signup_button')}
+                  {loading ? 'Loading...' : 'Sign Up'}
                 </Text>
               </TouchableOpacity>
+              {error && <Text style={{ color: 'red', marginTop: 8 }}>{'Signup failed'}: {error}</Text>}
             </View>
 
             <View style={styles.footer}>

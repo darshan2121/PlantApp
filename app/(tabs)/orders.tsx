@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,33 +7,90 @@ import {
   FlatList,
   Image,
   Dimensions,
+  TouchableOpacity,
+  RefreshControl,
 } from 'react-native';
 import { Package, Clock, CircleCheck as CheckCircle, Truck } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
 import { useApp } from '../../contexts/AppContext';
 import { Order } from '../../types';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchMyOrders } from '../../store/orderSlice';
+import { RootState, AppDispatch } from '../../store';
+import { OrderDetailsModal } from '../../components/OrderDetailsModal';
+import axios from 'axios';
+import { BASE_URL } from '../../store/api';
+import { AnimatedPressable } from '../../components/AnimatedPressable';
+import OrderSkeleton from '../../components/OrderSkeleton';
 
 const { width } = Dimensions.get('window');
 
 export default function OrdersScreen() {
-  const { orders, language, t } = useApp();
+  const dispatch: AppDispatch = useDispatch();
+  const { language, t } = useApp();
+  const orders = useSelector((state: RootState) => state.orders.orders);
+  const loading = useSelector((state: RootState) => state.orders.loading);
+  const error = useSelector((state: RootState) => state.orders.error);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const token = useSelector((state: RootState) => state.user.token);
+  const [showSkeleton, setShowSkeleton] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const getStatusColor = (status: Order['status']) => {
-    switch (status) {
-      case 'Requested':
+  useEffect(() => {
+    if (!loading) {
+      const timer = setTimeout(() => setShowSkeleton(false), 300);
+      return () => clearTimeout(timer);
+    } else {
+      setShowSkeleton(true);
+    }
+  }, [loading]);
+
+  useEffect(() => {
+    dispatch(fetchMyOrders());
+  }, [dispatch]);
+
+  const handleOrderPress = async (order: any) => {
+    setModalVisible(true);
+    setDetailsLoading(true);
+    setOrderDetails(null);
+    try {
+      const res = await axios.get(`${BASE_URL}/orders/${order._id}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      setOrderDetails(res.data.order);
+    } catch (err) {
+      setOrderDetails({ error: 'Failed to load order details.' });
+    }
+    setDetailsLoading(false);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await dispatch(fetchMyOrders());
+    setRefreshing(false);
+  };
+
+  const getStatusColor = (orderStatus: string) => {
+    switch (orderStatus?.toLowerCase()) {
+      case 'pending':
         return Colors.warning;
-      case 'Approved':
+      case 'approved':
         return Colors.amcBlue;
-      case 'Ready for Pickup':
+      case 'ready for pickup':
+      case 'ready':
         return Colors.primary;
-      case 'Delivered':
+      case 'delivered':
         return Colors.success;
+      case 'cancelled':
+        return Colors.error;
       default:
         return Colors.textGrey;
     }
   };
 
-  const getStatusIcon = (status: Order['status']) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case 'Requested':
         return <Clock size={16} color={Colors.white} />;
@@ -48,7 +105,7 @@ export default function OrdersScreen() {
     }
   };
 
-  const getStatusText = (status: Order['status']) => {
+  const getStatusText = (status: string) => {
     switch (status) {
       case 'Requested': return t('order_status_requested');
       case 'Approved': return t('order_status_approved');
@@ -58,72 +115,89 @@ export default function OrdersScreen() {
     }
   };
 
-  const renderOrderItem = ({ item }: { item: Order }) => (
-    <View style={styles.orderCard}>
-      <View style={styles.orderHeader}>
-        <Text style={styles.orderId}>
-          {t('order_id', { id: item.id })}
-        </Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          {getStatusIcon(item.status)}
-          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
+  const renderOrderItem = ({ item }: { item: any }) => {
+    // console.log('Order orderStatus:', item.orderStatus);
+    return (
+      <View style={styles.orderCard}>
+        <View style={styles.orderHeaderRow}>
+          <Text style={styles.orderId}>
+            Order #{item.orderNumber || item._id}
+          </Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.orderStatus) }]}> 
+            {getStatusIcon(item.orderStatus)}
+            <Text style={styles.statusText}>{item.orderStatus}</Text>
+          </View>
         </View>
-      </View>
-      
-      <Text style={styles.orderDate}>
-        {t('booking_date', { date: new Date(item.bookingDate).toLocaleDateString(language === 'gujarati' ? 'gu-IN' : 'en-US', { year: 'numeric', month: 'long', day: 'numeric' }) })}
-      </Text>
-
-      <View style={styles.plantsContainer}>
-        {item.plants.map((cartItem, index) => (
-          <View key={index} style={styles.plantItem}>
-            <Image source={{ uri: cartItem.plant.image }} style={styles.plantImage} />
-            <View style={styles.plantDetails}>
+        <Text style={styles.orderDate}>
+          Booking Date: {new Date(item.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </Text>
+        <View style={styles.plantsContainer}>
+          {item.items.map((orderItem: any, index: number) => (
+            <View key={index} style={styles.plantRow}>
               <Text style={styles.plantName}>
-                {t('plant_name', { name: language === 'gujarati' ? cartItem.plant.nameGujarati : cartItem.plant.name })}
+                Plant: {orderItem.item?.name || orderItem.item?._id || orderItem.item || 'Unknown Plant'}
               </Text>
               <Text style={styles.plantQuantity}>
-                {t('quantity', { count: cartItem.quantity })}
+                Quantity: {orderItem.quantity}
               </Text>
             </View>
-            <Text style={styles.freeText}>
-              {t('free')}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.orderFooter}>
-        <Text style={styles.totalPlants}>
-          {t('total_plants', { count: item.plants.reduce((total, plant) => total + plant.quantity, 0) })}
-        </Text>
-      </View>
-
-      {item.status === 'Ready for Pickup' && (
-        <View style={styles.pickupInfo}>
-          <Text style={styles.pickupText}>
-            {t('pickup_info')}
+          ))}
+        </View>
+        <View style={styles.orderFooter}>
+          <Text style={styles.totalPlants}>
+            Total Plants: {item.items.reduce((total: number, plant: any) => total + plant.quantity, 0)}
           </Text>
         </View>
-      )}
-    </View>
-  );
+        {item.orderStatus === 'Ready for Pickup' && (
+          <View style={styles.pickupInfo}>
+            <Text style={styles.pickupText}>
+              Please pick up your order at the designated location.
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  };
 
-  if (orders.length === 0) {
+  if (showSkeleton) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
           <Text style={styles.title}>
-            {t('my_orders')}
+            My Orders
+          </Text>
+        </View>
+        <View style={styles.ordersList}>
+          {[...Array(3)].map((_, idx) => (
+            <OrderSkeleton key={idx} />
+          ))}
+        </View>
+      </SafeAreaView>
+    );
+  }
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text>Error loading data</Text>
+        <Text>{error}</Text>
+      </SafeAreaView>
+    );
+  }
+  if (!orders || orders.length === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>
+            My Orders
           </Text>
         </View>
         <View style={styles.emptyContainer}>
           <Package size={80} color={Colors.textGrey} />
           <Text style={styles.emptyText}>
-            {t('orders_empty')}
+            No orders found.
           </Text>
           <Text style={styles.emptySubtext}>
-            {t('orders_empty_subtext')}
+            You have not placed any orders yet.
           </Text>
         </View>
       </SafeAreaView>
@@ -134,19 +208,44 @@ export default function OrdersScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>
-          {t('my_orders')}
+          My Orders
         </Text>
         <Text style={styles.orderCount}>
-          {t('orders_count', { count: orders.length })}
+          {orders.length} orders
         </Text>
       </View>
-
       <FlatList
         data={orders}
-        renderItem={renderOrderItem}
-        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <AnimatedPressable
+            onPress={() => handleOrderPress(item)}
+            style={({ pressed }: { pressed: boolean }) => [
+              pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+            ]}
+          >
+            {renderOrderItem({ item })}
+          </AnimatedPressable>
+        )}
+        keyExtractor={(item) => item._id}
         contentContainerStyle={styles.ordersList}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary]}
+            progressBackgroundColor={Colors.lightGreen}
+            tintColor={Colors.primary}
+            title="Pull to refresh"
+            titleColor={Colors.primary}
+          />
+        }
+      />
+      <OrderDetailsModal
+        visible={modalVisible}
+        order={orderDetails}
+        loading={detailsLoading}
+        onClose={() => setModalVisible(false)}
       />
     </SafeAreaView>
   );
@@ -212,11 +311,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
   },
+  orderHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start', // allow badge to align to top
+    flexWrap: 'wrap',         // allow wrapping if needed
+    marginBottom: 8,
+  },
   orderId: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.black,
-    fontFamily: 'Poppins-SemiBold',
+    flex: 1,                  // take available space
+    minWidth: 0,              // allow text to shrink
+    marginRight: 8,           // space between order number and badge
   },
   statusBadge: {
     flexDirection: 'row',
@@ -224,13 +332,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 16,
+    flexShrink: 0,
+    alignSelf: 'flex-start',  // keep badge at top right
+    marginTop: 2,
+    maxWidth: 120,
   },
   statusText: {
     fontSize: 12,
     color: Colors.white,
     fontWeight: '600',
-    fontFamily: 'Poppins-SemiBold',
     marginLeft: 4,
+    flexShrink: 1,
+    flexWrap: 'wrap',
   },
   orderDate: {
     fontSize: 14,
@@ -240,6 +353,15 @@ const styles = StyleSheet.create({
   },
   plantsContainer: {
     marginBottom: 12,
+  },
+  plantRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.lightGreen,
+    padding: 8,
+    borderRadius: 12,
+    marginBottom: 8,
   },
   plantItem: {
     flexDirection: 'row',
@@ -262,12 +384,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: Colors.black,
-    fontFamily: 'Poppins-SemiBold',
+    flex: 1,
   },
   plantQuantity: {
     fontSize: 12,
     color: Colors.textGrey,
-    fontFamily: 'Poppins-Regular',
+    marginLeft: 12,
+    flexShrink: 0,
   },
   freeText: {
     fontSize: 14,

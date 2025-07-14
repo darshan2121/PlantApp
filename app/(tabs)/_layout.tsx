@@ -4,14 +4,23 @@ import { Colors } from '../../constants/Colors';
 import { useApp } from '../../contexts/AppContext';
 import { SafeAreaView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useState, useEffect } from 'react';
+import { AnnouncementModal } from '../../components/AnnouncementModal';
+import { AnimatedPressable } from '../../components/AnimatedPressable';
 
 export default function TabLayout() {
-  const { getCartItemCount, language } = useApp();
+  const { getCartItemCount, language, user } = useApp();
   const cartItemCount = getCartItemCount();
   const insets = useSafeAreaInsets();
+  const [showAnnouncement, setShowAnnouncement] = useState(false);
+
+  useEffect(() => {
+    if (user) setShowAnnouncement(true);
+  }, [user]);
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: Colors.white }}>
+      <AnnouncementModal visible={showAnnouncement} onClose={() => setShowAnnouncement(false)} />
       <Tabs
         screenOptions={{
           headerShown: false,
@@ -22,11 +31,6 @@ export default function TabLayout() {
             paddingBottom: insets.bottom > 0 ? insets.bottom : (Platform.OS === 'ios' ? 24 : 16),
             paddingTop: 8,
             height: 70 + (insets.bottom > 0 ? insets.bottom : 0),
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: -2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 8,
-            elevation: 10,
           },
           tabBarActiveTintColor: Colors.primary,
           tabBarInactiveTintColor: Colors.textGrey,
@@ -44,6 +48,15 @@ export default function TabLayout() {
             tabBarIcon: ({ size, color }) => (
               <HomeIcon size={size} color={color} />
             ),
+            tabBarButton: (props) => (
+              <AnimatedPressable {...props} style={({ pressed }: { pressed: boolean }) => ({
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.85 : 1,
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+              })} />
+            ),
           }}
         />
         <Tabs.Screen
@@ -60,6 +73,15 @@ export default function TabLayout() {
               fontSize: 10,
               fontWeight: '600',
             },
+            tabBarButton: (props) => (
+              <AnimatedPressable {...props} style={({ pressed }: { pressed: boolean }) => ({
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.85 : 1,
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+              })} />
+            ),
           }}
         />
         <Tabs.Screen
@@ -69,6 +91,15 @@ export default function TabLayout() {
             tabBarIcon: ({ size, color }) => (
               <Package size={size} color={color} />
             ),
+            tabBarButton: (props) => (
+              <AnimatedPressable {...props} style={({ pressed }: { pressed: boolean }) => ({
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.85 : 1,
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+              })} />
+            ),
           }}
         />
         <Tabs.Screen
@@ -77,6 +108,15 @@ export default function TabLayout() {
             title: language === 'gujarati' ? 'પ્રોફાઇલ' : 'Profile',
             tabBarIcon: ({ size, color }) => (
               <User size={size} color={color} />
+            ),
+            tabBarButton: (props) => (
+              <AnimatedPressable {...props} style={({ pressed }: { pressed: boolean }) => ({
+                flex: 1,
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: pressed ? 0.85 : 1,
+                transform: [{ scale: pressed ? 0.97 : 1 }],
+              })} />
             ),
           }}
         />

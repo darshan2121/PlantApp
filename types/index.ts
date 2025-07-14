@@ -31,16 +31,24 @@ export interface Order {
 
 export interface User {
   id: string;
-  fullName: string;
-  fullNameGujarati?: string;
+  name: string;
   email?: string;
-  phone: string;
+  mobile: string;
+  image?: string | null;
   address: {
     area: string;
-    areaGujarati?: string;
-    pincode: string;
-    wardName: string;
-    wardNameGujarati?: string;
+    ward: string;
+    pinCode: string;
+    city: string;
+    state: string;
+    country: string;
   };
-  language: 'english' | 'gujarati';
+  location?: {
+    latitude: number;
+    longitude: number;
+  };
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  fullAddress?: string;
 }

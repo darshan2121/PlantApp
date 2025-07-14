@@ -64,5 +64,9 @@
   "description": "Description",
   "benefits": "Benefits",
   "select_quantity": "Select Quantity",
-  "max_10_plants": "You can select up to 10 plants."
+  "max_10_plants": "You can select up to 10 plants.",
+  "address_info": "Address Information",
+  "signup_button": "Sign Up",
+  "signup_failed": "Signup failed",
+  "already_have_account": "Already have an account?"
 } 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,39 +9,178 @@ import {
   Image,
   Alert,
   Dimensions,
+  TextInput,
+  ScrollView,
+  RefreshControl,
 } from 'react-native';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
 import { useApp } from '../../contexts/AppContext';
 import { useRouter } from 'expo-router';
 import { CartItem } from '../../types';
+import { useDispatch, useSelector } from 'react-redux';
+import { createOrder } from '../../store/orderSlice';
+import { RootState, AppDispatch } from '../../store';
+import MatureToast from '../../components/MatureToast';
+import { IMAGE_BASE_URL } from '../../store/api';
 
 const { width } = Dimensions.get('window');
 
 export default function CartScreen() {
-  const { cart, updateQuantity, removeFromCart, clearCart, addOrder, language, t } = useApp();
+  const { cart, updateQuantity, removeFromCart, clearCart, language, t } = useApp();
   const router = useRouter();
+  const dispatch: AppDispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.user.user);
+  const orderLoading = useSelector((state: RootState) => state.orders.loading);
+  const orderError = useSelector((state: RootState) => state.orders.error);
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [toastVisible, setToastVisible] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastType, setToastType] = useState<'error' | 'success'>('error');
+
+  const emptyAddress = {
+    area: '',
+    ward: '',
+    pinCode: '',
+    city: '',
+    state: '',
+    country: '',
+    contactPhone: '',
+    contactName: '',
+  };
+
+  const [address, setAddress] = useState(emptyAddress);
+  const [notes, setNotes] = useState('');
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleInputChange = (field: keyof typeof emptyAddress, value: string) => {
+    setAddress(prev => ({ ...prev, [field]: value }));
+  };
 
   const handleBookPlants = () => {
     if (cart.length === 0) {
-      Alert.alert(
-        language === 'gujarati' ? 'ખાલી કાર્ટ' : 'Empty Cart', 
-        language === 'gujarati' ? 'કૃપા કરીને પહેલા કાર્ટમાં છોડ ઉમેરો' : 'Please add some plants to your cart first'
-      );
+      setToastMessage(language === 'gujarati' ? 'કૃપા કરીને પહેલા કાર્ટમાં છોડ ઉમેરો' : 'Please add some plants to your cart first');
+      setToastType('error');
+      setToastVisible(true);
       return;
     }
+    if (!user) {
+      setToastMessage('You must be logged in to place an order.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    // Validate address fields with specific messages and format
+    if (!address.contactName.trim()) {
+      setToastMessage('Contact name is required.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    if (!address.contactPhone.trim()) {
+      setToastMessage('Contact phone is required.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    if (!/^[0-9]{10}$/.test(address.contactPhone.trim())) {
+      setToastMessage('Contact phone must be a valid 10-digit number.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    if (!address.area.trim()) {
+      setToastMessage('Area is required.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    if (!address.ward.trim()) {
+      setToastMessage('Ward is required.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    if (!address.pinCode.trim()) {
+      setToastMessage('Pin code is required.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    if (!/^[0-9]{6}$/.test(address.pinCode.trim())) {
+      setToastMessage('Pin code must be a valid 6-digit number.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    if (!address.city.trim()) {
+      setToastMessage('City is required.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    if (!address.state.trim()) {
+      setToastMessage('State is required.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    if (!address.country.trim()) {
+      setToastMessage('Country is required.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    handleConfirmOrder(address, notes);
+  };
 
-    const order = {
-      id: Date.now().toString(),
-      plants: cart,
-      bookingDate: new Date().toISOString(),
-      status: 'Requested' as const,
-      contactNumber: '1234567890',
+  const handleConfirmOrder = async (address: typeof emptyAddress, notes: string) => {
+    if (!user) {
+      setToastMessage('You must be logged in to place an order.');
+      setToastType('error');
+      setToastVisible(true);
+      return;
+    }
+    const orderPayload = {
+      paymentMethod: null,
+      deliveryAddress: {
+        area: address.area,
+        ward: address.ward,
+        pinCode: address.pinCode,
+        city: address.city,
+        state: address.state,
+        country: address.country,
+        contactPhone: address.contactPhone,
+        contactName: address.contactName,
+      },
+      items: cart.map(item => ({
+        item: item.plant.id,
+        quantity: item.quantity,
+        price: 0,
+      })),
+      notes: notes,
+      orderNumber: 'ORD-' + Date.now(),
+      estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      user: user.id,
     };
-
-    addOrder(order);
-    clearCart();
-    router.push('/success');
+    console.log('Order payload:', orderPayload);
+    try {
+      await dispatch(createOrder(orderPayload)).unwrap();
+      setShowAddressModal(false);
+      setToastMessage('Order placed successfully!');
+      setToastType('success');
+      setToastVisible(true);
+      setTimeout(() => {
+        setToastVisible(false);
+        router.push('/success');
+        clearCart(); // moved here, after navigation
+      }, 1000);
+    } catch (err: any) {
+      let backendMsg = err?.response?.data?.message || err?.message || orderError || 'Could not place order.';
+      setToastMessage(backendMsg);
+      setToastType('error');
+      setToastVisible(true);
+    }
   };
 
   const handleRemoveItem = (plantId: string) => {
@@ -59,9 +198,23 @@ export default function CartScreen() {
     );
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // If you fetch cart from backend, do it here. For now, just simulate delay.
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    setRefreshing(false);
+  };
+
   const renderCartItem = ({ item }: { item: CartItem }) => (
     <View style={styles.cartItem}>
-      <Image source={{ uri: item.plant.image }} style={styles.itemImage} />
+      <Image
+        source={{
+          uri:
+            (item.plant as any).imageUrlFull ||
+            ((item.plant as any).imageUrl ? `${IMAGE_BASE_URL}${(item.plant as any).imageUrl}` : item.plant.image)
+        }}
+        style={styles.itemImage}
+      />
       <View style={styles.itemDetails}>
         <Text style={styles.itemName} numberOfLines={2} ellipsizeMode="tail">
           {language === 'gujarati' ? item.plant.nameGujarati : item.plant.name}
@@ -151,16 +304,52 @@ export default function CartScreen() {
         </Text>
       </View>
 
-      <FlatList
-        data={cart}
-        renderItem={renderCartItem}
-        keyExtractor={(item) => item.plant.id}
-        contentContainerStyle={styles.cartList}
-        showsVerticalScrollIndicator={false}
-        accessibilityLabel="Cart List"
-        testID="cart-list"
-      />
+      <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+        {/* Cart Items */}
+        <FlatList
+          data={cart}
+          renderItem={renderCartItem}
+          keyExtractor={(item) => item.plant.id}
+          contentContainerStyle={styles.cartList}
+          showsVerticalScrollIndicator={false}
+          scrollEnabled={false} // FlatList inside ScrollView: disable its own scroll
+          accessibilityLabel="Cart List"
+          testID="cart-list"
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[Colors.primary]}
+              progressBackgroundColor={Colors.lightGreen}
+              tintColor={Colors.primary}
+              title="Pull to refresh"
+              titleColor={Colors.primary}
+            />
+          }
+        />
 
+        {/* Address Fields below cart cards */}
+        <View style={{ paddingHorizontal: 20, marginBottom: 8 }}>
+          <Text style={{ fontSize: 16, fontWeight: '600', marginBottom: 8, color: Colors.primary }}>Delivery Address</Text>
+          <TextInput style={styles.input} placeholder="Contact Name" value={address.contactName} onChangeText={v => handleInputChange('contactName', v)} />
+          <TextInput style={styles.input} placeholder="Contact Phone" value={address.contactPhone} onChangeText={v => handleInputChange('contactPhone', v)} keyboardType="phone-pad" />
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TextInput style={[styles.input, { flex: 1 }]} placeholder="Area" value={address.area} onChangeText={v => handleInputChange('area', v)} />
+            <TextInput style={[styles.input, { flex: 1 }]} placeholder="Ward" value={address.ward} onChangeText={v => handleInputChange('ward', v)} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TextInput style={[styles.input, { flex: 1 }]} placeholder="Pin Code" value={address.pinCode} onChangeText={v => handleInputChange('pinCode', v)} keyboardType="numeric" />
+            <TextInput style={[styles.input, { flex: 1 }]} placeholder="City" value={address.city} onChangeText={v => handleInputChange('city', v)} />
+          </View>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TextInput style={[styles.input, { flex: 1 }]} placeholder="State" value={address.state} onChangeText={v => handleInputChange('state', v)} />
+            <TextInput style={[styles.input, { flex: 1 }]} placeholder="Country" value={address.country} onChangeText={v => handleInputChange('country', v)} />
+          </View>
+          <TextInput style={styles.input} placeholder="Notes (optional)" value={notes} onChangeText={setNotes} multiline />
+        </View>
+      </ScrollView>
+
+      {/* Footer: Total and Book Plants Button */}
       <View style={styles.footer}>
         <View style={styles.totalContainer}>
           <Text style={styles.totalLabel} accessibilityLabel="Total Plants Label">
@@ -170,11 +359,18 @@ export default function CartScreen() {
             {cart.reduce((total, item) => total + item.quantity, 0)}
           </Text>
         </View>
-        <TouchableOpacity style={styles.bookButton} onPress={handleBookPlants} activeOpacity={0.7} accessible accessibilityLabel="Book Plants Button" testID="book-plants">
+        <TouchableOpacity style={styles.bookButton} onPress={handleBookPlants} activeOpacity={0.7} accessible accessibilityLabel="Book Plants Button" testID="book-plants" disabled={orderLoading}>
           <Text style={styles.bookButtonText} accessibilityLabel="Book Plants Text">
-            {t('book_plants')}
+            {orderLoading ? t('loading') : t('book_plants')}
           </Text>
         </TouchableOpacity>
+        <MatureToast
+          message={toastMessage}
+          visible={toastVisible}
+          onHide={() => setToastVisible(false)}
+          type={toastType}
+          duration={2000}
+        />
       </View>
     </SafeAreaView>
   );
@@ -346,5 +542,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     fontFamily: 'Poppins-SemiBold',
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: Colors.border,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    fontSize: 16,
+    backgroundColor: Colors.lightGreen,
   },
 });

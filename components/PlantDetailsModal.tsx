@@ -16,6 +16,7 @@ import { X, Plus, Minus, ShoppingCart, Leaf, Heart, MapPin } from 'lucide-react-
 import { Plant } from '../types';
 import { Colors } from '../constants/Colors';
 import { useApp } from '../contexts/AppContext';
+import { IMAGE_BASE_URL } from '../store/api';
 
 interface PlantDetailsModalProps {
   visible: boolean;
@@ -122,6 +123,11 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
     }
   };
 
+  // Compute the image URL for the plant
+  const imageUrl =
+    (plant as any).imageUrlFull ||
+    ((plant as any).imageUrl ? `${IMAGE_BASE_URL}${(plant as any).imageUrl}` : plant.image);
+
   return (
     <Modal
       visible={visible}
@@ -177,19 +183,15 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
             accessibilityLabel="Modal Content"
             testID="modal-content"
           >
-            {/* Plant Images Gallery */}
+            {/* Plant Image */}
             <View style={styles.imageContainer}>
-              <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={{ flex: 1 }}>
-                {(plant.images && plant.images.length > 0 ? plant.images : [plant.image]).map((img: string, idx: number) => (
-                  <Image key={idx} source={{ uri: img }} style={styles.image} />
-                ))}
-              </ScrollView>
+              <Image source={{ uri: imageUrl }} style={styles.image} />
               <View style={styles.imageOverlay}>
-                <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(plant.difficulty) }]}> 
+                {/* <View style={[styles.difficultyBadge, { backgroundColor: getDifficultyColor(plant.difficulty) }]}> 
                   <Text style={styles.difficultyText}>
                     {getDifficultyText(plant.difficulty)}
                   </Text>
-                </View>
+                </View> */}
               </View>
             </View>
 
@@ -218,22 +220,19 @@ export const PlantDetailsModal: React.FC<PlantDetailsModalProps> = ({
                   {t('description')}
                 </Text>
                 <Text style={styles.description}>
-                  {t('plant_description', { description: language === 'gujarati' ? plant.descriptionGujarati : plant.description })}
+                  {t('plant_description', { description: (plant as any).details || plant.description })}
                 </Text>
               </View>
 
               {/* Benefits */}
               <View style={styles.benefitsContainer}>
-                <Text style={styles.benefitsTitle}>
-                  {t('benefits')}
-                </Text>
+                <Text style={styles.benefitsTitle}>Benefits</Text>
                 <View style={styles.benefitsList}>
-                  {(language === 'gujarati' ? plant.benefitsGujarati : plant.benefits).map((benefit, index) => (
-                    <View key={index} style={styles.benefitItem}>
-                      <View style={styles.bulletPoint} />
-                      <Text style={styles.benefitText}>{t('plant_benefit', { benefit })}</Text>
-                    </View>
-                  ))}
+                  {(plant as any).benifites ? (
+                    <Text style={styles.benefitText}>{(plant as any).benifites}</Text>
+                  ) : (
+                    <Text style={styles.benefitText}>No benefits listed.</Text>
+                  )}
                 </View>
               </View>
 

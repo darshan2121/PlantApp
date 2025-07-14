@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -7,17 +7,25 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
+  RefreshControl,
+  ScrollView,
 } from 'react-native';
 import { User, MapPin, Phone, LogOut, Package, Globe, Heart } from 'lucide-react-native';
 import { Colors } from '../../constants/Colors';
 import { useApp } from '../../contexts/AppContext';
 import { useRouter } from 'expo-router';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState, AppDispatch } from '../../store';
+import { logout } from '../../store/userSlice';
 
 const { width } = Dimensions.get('window');
 
 export default function ProfileScreen() {
-  const { user, setUser, orders, language, setLanguage, t } = useApp();
+  const { orders, language, setLanguage, t } = useApp();
+  const user = useSelector((state: RootState) => state.user.user);
+  const dispatch: AppDispatch = useDispatch();
   const router = useRouter();
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -29,7 +37,7 @@ export default function ProfileScreen() {
           text: t('logout'),
           style: 'destructive',
           onPress: () => {
-            setUser(null);
+            dispatch(logout());
             router.replace('/auth/login');
           }
         },
@@ -43,6 +51,13 @@ export default function ProfileScreen() {
 
   const toggleLanguage = () => {
     setLanguage(language === 'english' ? 'gujarati' : 'english');
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    // If you have a fetchUser or fetchOrders, call it here. For now, just simulate delay.
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    setRefreshing(false);
   };
 
   if (!user) {
@@ -59,92 +74,107 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>
-          {t('profile')}
-        </Text>
-        {/* <TouchableOpacity style={styles.languageButton} onPress={toggleLanguage}>
-          <Globe size={20} color={Colors.primary} />
-        </TouchableOpacity> */}
-      </View>
-
-      <View style={styles.profileCard}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <User size={40} color={Colors.primary} />
-          </View>
-          <Text style={styles.userName}>{user.fullName}</Text>
-          <View style={styles.amcBadge}>
-            <Heart size={16} color={Colors.white} />
-            <Text style={styles.amcBadgeText}>
-              {t('amc_member')}
-            </Text>
-          </View>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[Colors.primary]}
+            progressBackgroundColor={Colors.lightGreen}
+            tintColor={Colors.primary}
+            title="Pull to refresh"
+            titleColor={Colors.primary}
+          />
+        }
+      >
+        <View style={styles.header}>
+          <Text style={styles.title}>
+            {t('profile')}
+          </Text>
+          {/* <TouchableOpacity style={styles.languageButton} onPress={toggleLanguage}>
+            <Globe size={20} color={Colors.primary} />
+          </TouchableOpacity> */}
         </View>
 
-        <View style={styles.infoContainer}>
-          <View style={styles.infoItem}>
-            <Phone size={20} color={Colors.textGrey} />
-            <Text style={styles.infoText}>{user.phone}</Text>
-          </View>
-
-          <View style={styles.infoItem}>
-            <MapPin size={20} color={Colors.textGrey} />
-            <Text style={styles.infoText}>
-              {user.address.area}, {user.address.wardName} - {user.address.pincode}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.statsContainer}>
-        <View style={styles.statCard}>
-          <Package size={24} color={Colors.primary} />
-          <Text style={styles.statNumber}>{orders.length}</Text>
-          <Text style={styles.statLabel}>
-            {t('total_orders')}
-          </Text>
-        </View>
-        
-        <View style={styles.statCard}>
-          <Heart size={24} color={Colors.success} />
-          <Text style={styles.statNumber}>
-            {orders.reduce((total, order) => 
-              total + order.plants.reduce((plantTotal, plant) => plantTotal + plant.quantity, 0), 0
-            )}
-          </Text>
-          <Text style={styles.statLabel}>
-            {t('total_plants_label')}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.actionsContainer}>
-        <TouchableOpacity style={styles.actionButton} onPress={handleViewOrders}>
-          <Package size={20} color={Colors.primary} />
-          <Text style={styles.actionText}>
-            {t('view_order_history')}
-          </Text>
-          {orders.length > 0 && (
-            <View style={styles.orderBadge}>
-              <Text style={styles.orderBadgeText}>{orders.length}</Text>
+        <View style={styles.profileCard}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <User size={40} color={Colors.primary} />
             </View>
-          )}
-        </TouchableOpacity>
+            <Text style={styles.userName}>{user.name}</Text>
+            <View style={styles.amcBadge}>
+              <Heart size={16} color={Colors.white} />
+              <Text style={styles.amcBadgeText}>
+                {t('amc_member')}
+              </Text>
+            </View>
+          </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <LogOut size={20} color={Colors.error} />
-          <Text style={styles.logoutText}>
-            {t('logout')}
+          <View style={styles.infoContainer}>
+            <View style={styles.infoItem}>
+              <Phone size={20} color={Colors.textGrey} />
+              <Text style={styles.infoText}>{user.mobile || '-'}</Text>
+            </View>
+
+            <View style={styles.infoItem}>
+              <MapPin size={20} color={Colors.textGrey} />
+              <Text style={styles.infoText}>
+                {user.address.area || '-'}, {user.address.ward || '-'}, {user.address.city || '-'}, {user.address.state || '-'} - {user.address.pinCode || '-'}, {user.address.country || '-'}
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Package size={24} color={Colors.primary} />
+            <Text style={styles.statNumber}>{orders.length}</Text>
+            <Text style={styles.statLabel}>
+              {t('total_orders')}
+            </Text>
+          </View>
+          
+          <View style={styles.statCard}>
+            <Heart size={24} color={Colors.success} />
+            <Text style={styles.statNumber}>
+              {orders.reduce((total, order) => 
+                total + order.plants.reduce((plantTotal, plant) => plantTotal + plant.quantity, 0), 0
+              )}
+            </Text>
+            <Text style={styles.statLabel}>
+              {t('total_plants_label')}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleViewOrders}>
+            <Package size={20} color={Colors.primary} />
+            <Text style={styles.actionText}>
+              {t('view_order_history')}
+            </Text>
+            {orders.length > 0 && (
+              <View style={styles.orderBadge}>
+                <Text style={styles.orderBadgeText}>{orders.length}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <LogOut size={20} color={Colors.error} />
+            <Text style={styles.logoutText}>
+              {t('logout')}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.amcFooter}>
+          <Text style={styles.amcFooterText}>
+            {t('amc_footer')}
           </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.amcFooter}>
-        <Text style={styles.amcFooterText}>
-          {t('amc_footer')}
-        </Text>
-      </View>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
